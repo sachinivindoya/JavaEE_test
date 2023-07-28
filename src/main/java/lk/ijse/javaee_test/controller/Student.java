@@ -122,4 +122,54 @@ public class Student extends HttpServlet {
          //   resp.setContentType("application/json");: The response's "Content-Type" header is set to "application/json" to indicate that the response contains JSON data.
 
          //   jsonb.toJson(studentObj, resp.getWriter());: JSON-B is used again to serialize the studentObj back into JSON format and write it to the response's writer stream, so it can be sent back to the client.
+
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if(req.getContentType()==null || !req.getContentType().toLowerCase().startsWith("application/json")){
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        }
+        Jsonb jsonb = JsonbBuilder.create();
+        StudentDTO studentObj = jsonb.fromJson(req.getReader(), StudentDTO.class);
+        //validation
+        boolean b = StudentValidation.studentValidation(studentObj);
+        if (b){
+            try {
+                //dbmangement
+                int i = StudentModel.SaveStudent(studentObj, con);
+                if (i !=1){
+                    throw new RuntimeException("save failed");
+                }else {
+                    System.out.println("saved sucessfully");
+                }
+                resp.setStatus(HttpServletResponse.SC_CREATED);
+                //the created json is sent to frontend
+                resp.setContentType("application/json");
+                jsonb.toJson(studentObj,resp.getWriter());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    //if(req.getContentType()==null || !req.getContentType().toLowerCase().startsWith("application/json")): This line checks whether the request has a "Content-Type" header that starts with "application/json". As in the doPost method, this is to ensure that the incoming data is in JSON format. If the condition is not met, the method sends an HTTP 405 (Method Not Allowed) error response back to the client using resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);. This prevents the server from processing requests with an invalid or missing "Content-Type" header.
+    //
+    //Jsonb jsonb = JsonbBuilder.create();: It creates a JSON-B (Java API for JSON Binding) object, which provides functionality for converting Java objects to JSON and vice versa.
+    //
+    //StudentDTO studentObj = jsonb.fromJson(req.getReader(), StudentDTO.class);: This line uses JSON-B to deserialize the JSON data from the request's reader stream into a StudentDTO object. It assumes that the JSON data in the request body corresponds to the StudentDTO class, which is likely a data transfer object representing a student.
+    //
+    //boolean b = StudentValidation.studentValidation(studentObj);: The code calls a static method studentValidation from the StudentValidation class to validate the studentObj. If the validation returns true, it means the validation was successful.
+    //
+    //if (b) { ... }: This block of code executes if the validation is successful.
+    //
+    //int i = StudentModel.SaveStudent(studentObj, con);: It calls the static method SaveStudent from the StudentModel class to save the validated studentObj to the database using a connection object (con). Just like in the doPost method, it seems that this method is intended to save student data.
+    //
+    //if (i !=1) { ... } else { ... }: This conditional block checks the result of the database operation. If i is not equal to 1 (indicating that the save operation did not affect one row, as expected), a RuntimeException is thrown with the message "save failed". Otherwise, the code prints "saved successfully".
+    //
+    //resp.setStatus(HttpServletResponse.SC_CREATED);: If everything goes well, the response status is set to HTTP 201 (Created) to indicate that the request was successful, and a new resource was created.
+    //
+    //resp.setContentType("application/json");: The response's "Content-Type" header is set to "application/json" to indicate that the response contains JSON data.
+    //
+    //jsonb.toJson(studentObj, resp.getWriter());: JSON-B is used again to serialize the studentObj back into JSON format and write it to the response's writer stream so it can be sent back to the client.
 }
+
+
